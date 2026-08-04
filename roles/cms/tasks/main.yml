@@ -64,16 +64,6 @@
     system: yes
   notify: Restart CMS
 
-- name: Create CMS ranking user
-  become: yes
-  user:
-    name: cmsrankinguser
-    comment: CMS ranking service user
-    create_home: no
-    shell: /bin/false
-  when: '"cms_ranking" in services'
-  notify: Restart CMS ranking service
-
 - name: Add cmsuser to sudo group
   become: yes
   user:
@@ -140,8 +130,8 @@
   become: yes
   file:
     path: "{{ item }}"
-    owner: cmsrankinguser
-    group: cmsrankinguser
+    owner: cmsuser
+    group: cmsuser
     mode: '0755'
     follow: yes
     state: directory

@@ -8,7 +8,7 @@ After=isolate-optimizations.service postgresql.service nginx.service
 Type=simple
 User=cmsuser
 Environment="SCRIPT_ARGS=-a {{ contest_id | default('ALL') }}"
-ExecStart=/opt/.venv/bin/cmsResourceService $SCRIPT_ARGS
+ExecStart=/home/cmsuser/cms/bin/cmsResourceService $SCRIPT_ARGS
 LimitNOFILE=100000
 
 [Install]

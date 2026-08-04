@@ -14,8 +14,8 @@
   template:
     src: cms_ranking.toml.j2
     dest: "/home/cmsuser/cms/etc/cms_ranking.toml"
-    owner: cmsrankinguser
-    group: cmsrankinguser
+    owner: cmsuser
+    group: cmsuser
     mode: "0640"
   when: '"cms_ranking" in services'
   notify: Restart CMS ranking service
