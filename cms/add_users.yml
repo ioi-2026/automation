@@ -11,5 +11,8 @@
           register: cms_users
 
         - name: Run cmsAddUser
-          command: "/opt/.venv/bin/cmsAddUser -p '{{ item.password }}' -e '{{ item.email }}' \"{{ item.first_name }}\" \"{{ item.last_name }}\" '{{ item.username }}'"
+          become: yes
+          become_user: cmsuser
+          command: "/home/cmsuser/cms/bin/cmsAddUser -p '{{ item.password }}' -e '{{ item.email }}' \"{{ item.first_name }}\" \"{{ item.last_name }}\" '{{ item.username }}'"
           with_items: "{{ cms_users.list }}"
+          no_log: true

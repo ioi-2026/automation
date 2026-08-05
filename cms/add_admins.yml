@@ -11,5 +11,8 @@
           register: cms_admins
 
         - name: Run cmsAddAdmin
-          command: "/opt/.venv/bin/cmsAddAdmin '{{ item.username }}' -p '{{ item.password }}'"
+          become: yes
+          become_user: cmsuser
+          command: "/home/cmsuser/cms/bin/cmsAddAdmin '{{ item.username }}' -p '{{ item.password }}'"
           with_items: "{{ cms_admins.list }}"
+          no_log: true

@@ -12,5 +12,7 @@
       register: cms_users
 
     - name: Run cmsAddParticipation
-      command: "/opt/.venv/bin/cmsAddParticipation -c {{ contest_id }} --t '{{ item.team_code }}' -p '{{ item.password }}' --ip '{{ item.ip }}/32' '{{ item.username }}'"
+      become: yes
+      become_user: cmsuser
+      command: "/home/cmsuser/cms/bin/cmsAddParticipation -c {{ contest_id }} --t '{{ item.team_code }}' -p '{{ item.password }}' --ip '{{ item.ip }}/32' '{{ item.username }}'"
       with_items: "{{ cms_users.list }}"
