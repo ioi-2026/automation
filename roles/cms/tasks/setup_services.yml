@@ -1,7 +1,3 @@
-# vars:
-#   contest_id: <number | 'ALL'>
-#   services: <string>
-
 - name: Copy CMS log service file
   become: yes
   template:
@@ -14,8 +10,6 @@
   notify: Restart CMS
   tags: services
 
-# The cms-log service is configured to be part of the cms service,
-# so it will be started and stopped together with the cms service.
 - name: Copy CMS resource service file
   become: yes
   template:
