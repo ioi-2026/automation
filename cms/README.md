@@ -88,6 +88,13 @@ Run:
 ansible-playbook -i env/hosts.ini -e @env/vars.yml -e contest_id=<ID> cms/add_participations.yml
 ```
 
+Online participants have no fixed IP, so leave the `ip` column of `env/data/users.csv` empty and
+use the variant that does not pass `--ip`:
+
+```
+ansible-playbook -i env/hosts.ini -e @env/vars.yml -e contest_id=<ID> cms/add_online_participations.yml
+```
+
 ## Adding statements to tasks
 
 1. Rsync files from Translation app's `/opt/translation/final_pdf/` to `env/data/final_pdf/`.
