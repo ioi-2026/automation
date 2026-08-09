@@ -1,13 +1,13 @@
 ### Let's Encrypt ###
 
-use_letsencrypt: yes
+use_letsencrypt: no
 letsencrypt_service_admin_email: info@ioinformatics.org # TODO
 
 
 ### CMS ###
 
-# cms_repo: https://github.com/ioi/cms.git
-# cms_version: master
+cms_repo: https://github.com/cms-dev/cms/
+cms_version: main
 
 cms_db: cmsdb
 cms_db_user: cmsuser
@@ -16,17 +16,17 @@ cms_db_host: "{{ groups['cms_db'][0] }}"
 
 cms_secret_key: 2bc11143e35c73f1b19ae273d1f731c9 # TODO: openssl rand -hex 16
 
-cms_contest_web_services_per_host: 2
-cms_contest_web_fqdn: cms.ioinformatics.org # TODO
+cms_contest_web_services_per_host: 1
+cms_contest_web_fqdn: ioi2026.uz # TODO
 
-cms_admin_web_fqdn: admin.ioinformatics.org # TODO
-cms_admin_web_auth_basic_user: ioi
+cms_admin_web_fqdn: admin.ioi2026.uz # TODO
+cms_admin_web_auth_basic_user: admin_user
 cms_admin_web_auth_basic_pass: pass # TODO
 
 cms_ranking_user: cmsuser
 cms_ranking_pass: pass # TODO: random password
 
-cms_ranking_fqdn: ranking.ioinformatics.org # TODO
+cms_ranking_fqdn: ranking.ioi2026.uz # TODO
 
 cms_worker_services_per_host: 1
 cms_worker_services_per_host_options:
@@ -35,16 +35,18 @@ cms_worker_services_per_host_options:
     memory_node: 0 # Worker locked to first NUMA node (CPU socket)
 
 cms_worker_host_slots: [
-  10.0.0.101,
-  10.0.0.102,
-  10.0.0.103,
-  10.0.0.104,
-  10.0.0.105,
-  10.0.0.106,
-  10.0.0.107,
-  10.0.0.108,
-  10.0.0.109,
+10.20.0.80,
+10.20.0.81,
+10.20.0.82,
+10.20.0.83,
+10.20.0.84,
+10.20.0.85,
+10.20.0.86,
+10.20.0.87,
+10.20.0.88,
+10.20.0.89
 ]
+
 
 
 ### Isolate ###
@@ -66,8 +68,8 @@ isolate_optimizations:
 
 ### Translation App ###
 
-# translation_repo: https://github.com/ioi/translation.git
-# translation_version: master
+translation_repo: https://github.com/ioi/translation.git
+translation_version: master
 
 translation_db: translation_db
 translation_db_user: translation_user
