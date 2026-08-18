@@ -11,5 +11,7 @@
           register: cms_teams
 
         - name: Run cmsAddTeam
-          command: "/opt/.venv/bin/cmsAddTeam '{{ item.code }}' '{{ item.name }}'"
+          become: yes
+          become_user: cmsuser
+          command: "/home/cmsuser/cms/bin/cmsAddTeam '{{ item.code }}' '{{ item.name }}'"
           with_items: "{{ cms_teams.list }}"

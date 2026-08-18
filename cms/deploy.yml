@@ -11,7 +11,7 @@
             password: "{{ cms_db_pass }}"
             allowed_databases:
               - "{{ cms_db }}"
-            allowed_host_addresses: "{{ (groups['cms_scoring'] + groups['cms_checker'] + groups['cms_evaluation'] + groups['cms_contest_web'] + groups['cms_admin_web'] + groups['cms_proxy'] + (groups['cms_worker'] | default([]))) | unique | ansible.utils.ipaddr('network/prefix') }}"
+            allowed_host_addresses: "{{ groups['cms'] | unique | ansible.utils.ipaddr('network/prefix') }}"
             enable_large_object: yes
         db_privileges:
           - database: "{{ cms_db }}"

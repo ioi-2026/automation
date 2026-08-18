@@ -1,99 +1,40 @@
-- name: Install Isolate prerequisite packages
+- name: Download isolate signing key
   become: yes
-  package:
-    name:
-      - build-essential # Required to build some CMS Python dependencies
-      - cgroup-lite
-      - libcap-dev
-      - pkg-config # Required to compile isolate
-      - libsystemd-dev # Required to compile isolate
-      - asciidoc # Required to compile isolate
-  tags: packages
-
-- name: Ensure Isolate repo directory exists
-  become: yes
-  file:
-    path: /opt/isolate
-    owner: "{{ ansible_user }}"
-    mode: "0755"
-    state: directory
-
-- name: Check out the Isolate repository
-  git:
-    repo: "{{ isolate_repo }}"
-    version: "{{ isolate_version }}"
-    dest: /opt/isolate
-    accept_hostkey: yes
-    depth: 1
-
-- name: Build Isolate
-  become: yes
-  make:
-    chdir: /opt/isolate
-    target: isolate
-
-- name: Ensure Isolate parent directories exist
-  become: yes
-  file:
-    path: "{{ item }}"
-    owner: root
-    group: root
-    mode: "0755"
-    state: directory
-  with_items:
-    - /var/local/lib
-    - /usr/local/bin
-    - /usr/local/etc
-
-- name: Ensure Isolate box root directory exists
-  become: yes
-  file:
-    path: /var/local/lib/isolate
-    owner: root
-    group: root
-    mode: "0755"
-    state: directory
-
-- name: Install Isolate
-  make:
-    chdir: /opt/isolate
-    target: install
-  become: yes
-
-- name: Copy Isolate config
-  become: yes
-  template:
-    src: isolate.j2
-    dest: /usr/local/etc/isolate
-    owner: root
-    group: "{{ isolate_group }}"
+  get_url:
+    url: https://www.ucw.cz/isolate/debian/signing-key.asc
+    dest: /etc/apt/keyrings/isolate.asc
     mode: "0644"
-  tags: config
 
-- name: Apply Isolate optimizations
-  import_tasks: apply_optimizations.yml
-
-- name: Copy Isolate systemd service files
+- name: Add isolate APT repository
   become: yes
   copy:
-    src: /opt/isolate/systemd/
-    dest: /etc/systemd/system/
-    remote_src: yes
-    owner: root
-    group: root
+    content: "deb [arch=amd64 signed-by=/etc/apt/keyrings/isolate.asc] http://www.ucw.cz/isolate/debian/ bookworm-isolate main\n"
+    dest: /etc/apt/sources.list.d/isolate.list
     mode: "0644"
-  tags: systemd
 
-- name: Reload systemd to recognize new services
+- name: Update APT cache
   become: yes
-  systemd:
-    daemon-reload: yes
-  tags: systemd
+  apt:
+    update_cache: yes
 
-- name: Start Isolate service
+- name: Install isolate package
   become: yes
-  systemd:
-    name: isolate.service
-    state: started
-    enabled: yes
-  tags: systemd
+  apt:
+    name: isolate
+    state: present
+
+- name: Patch isolate config to use correct cgroup root
+  become: yes
+  lineinfile:
+    path: /etc/isolate
+    regexp: "^cg_root"
+    line: "cg_root = /sys/fs/cgroup"
+    state: present
+
+- name: Allow the {{ isolate_group }} group to run isolate
+  become: yes
+  file:
+    path: /usr/bin/isolate
+    owner: root
+    group: "{{ isolate_group }}"
+    mode: '04750'

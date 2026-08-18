@@ -1,22 +1,22 @@
-- name: Copy cms.conf file
+- name: Copy cms.conf file to home directory
   become: yes
   template:
-    src: cms.conf.j2
-    dest: /usr/local/etc/cms.conf
+    src: cms.toml.j2
+    dest: "/home/cmsuser/cms/etc/cms.toml"
     owner: cmsuser
     group: cmsuser
-    mode: '0660'
+    mode: "0660"
   notify: Restart CMS
   tags: config
 
-- name: Copy cms.ranking.conf file
+- name: Copy cms.ranking.conf file to home directory
   become: yes
   template:
-    src: cms.ranking.conf.j2
-    dest: /usr/local/etc/cms.ranking.conf
-    owner: cmsrankinguser
-    group: cmsrankinguser
-    mode: '0640'
+    src: cms_ranking.toml.j2
+    dest: "/home/cmsuser/cms/etc/cms_ranking.toml"
+    owner: cmsuser
+    group: cmsuser
+    mode: "0640"
   when: '"cms_ranking" in services'
   notify: Restart CMS ranking service
   tags: config

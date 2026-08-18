@@ -15,6 +15,8 @@
     - libffi-dev
     - build-essential # Required to build some CMS Python dependencies
     - libcups2-dev # Required by pycups CMS Python dependency
+    - pkg-config
+    - libsystemd-dev
   tags: packages
   notify: Restart CMS
 
@@ -57,42 +59,27 @@
     name: cmsuser
     group: cmsuser
     comment: CMS default user
-    create_home: no
-    shell: /bin/false
+    create_home: yes
+    shell: /bin/bash
     system: yes
   notify: Restart CMS
 
-- name: Create CMS ranking user
+- name: Add cmsuser to sudo group
   become: yes
   user:
-    name: cmsrankinguser
-    comment: CMS ranking service user
-    create_home: no
-    shell: /bin/false
-  when: '"cms_ranking" in services'
-  notify: Restart CMS ranking service
-
-- name: Add additional users to the CMS user group
-  become: yes
-  user:
-    name: "{{ item }}"
-    groups: cmsuser
+    name: cmsuser
+    groups: sudo
     append: yes
-  loop: "{{ additional_cms_users }}"
-  notify: Restart CMS
+
+- name: Disable sudo password
+  become: yes
+  lineinfile:
+    path: /etc/sudoers
+    line: '%sudo ALL=(ALL) NOPASSWD:ALL'
+    validate: 'visudo -cf %s'
 
 - name: Reset SSH connection to allow user changes to affect current Ansible user
   meta: reset_connection
-
-- name: Ensure CMS repo directory exists
-  become: yes
-  file:
-    path: /opt/cms
-    owner: cmsuser
-    group: cmsuser
-    mode: '0775'
-    follow: yes
-    state: directory
 
 - name: Ensure CMS parent directories exist
   become: yes
@@ -143,8 +130,8 @@
   become: yes
   file:
     path: "{{ item }}"
-    owner: cmsrankinguser
-    group: cmsrankinguser
+    owner: cmsuser
+    group: cmsuser
     mode: '0755'
     follow: yes
     state: directory
@@ -159,62 +146,81 @@
   git:
     repo: "{{ cms_repo }}"
     version: "{{ cms_version }}"
-    dest: /opt/cms
+    dest: /home/cmsuser/src/
     accept_hostkey: yes
     depth: 1
+    force: yes
   register: cms_git_checkout_result
-
-- name: Read cms_installed_git_commit file
-  slurp:
-    src: /opt/cms_installed_git_commit
   ignore_errors: yes
-  changed_when: no
-  check_mode: no # Run even when Ansible is run in check mode
-  register: slurp_cms_installed_git_commit_result
 
-- name: Install CMS Python requirements
+- name: Ensure /home/cmsuser/src exists and is owned by cmsuser
+  become: yes
+  file:
+    path: /home/cmsuser/src
+    state: directory
+    recurse: yes
+    owner: cmsuser
+    group: cmsuser
+    mode: '0755'
+
+- name: Run install.py
+  become: yes
+  become_user: cmsuser
+  args:
+    chdir: /home/cmsuser/src/
+  shell: python3 install.py --skip-isolate --dir=/home/cmsuser/cms cms
+  register: prereq_result
+
+- name: Show install.py output (stdout)
+  ansible.builtin.debug:
+    var: prereq_result.stdout_lines
+
+- name: Show install.py errors (stderr)
+  ansible.builtin.debug:
+    var: prereq_result.stderr_lines
+
+- name: Add virtualenv activation to cmsuser profile
+  become: yes
+  become_user: cmsuser
+  lineinfile:
+    path: /home/cmsuser/.profile
+    line: 'source /home/cmsuser/cms/bin/activate'
+    create: yes
+    state: present
+
+- name: Install CMS Python constraints.txt
   become: yes
   pip:
-    requirements: /opt/cms/requirements.txt
-    virtualenv: /opt/.venv
+    requirements: /home/cmsuser/src/constraints.txt
+    virtualenv:  /home/cmsuser/cms
     virtualenv_command: python3.12 -m venv
-  when: cms_git_checkout_result.get('after', '<cms_git_checkout_skipped>') != (slurp_cms_installed_git_commit_result.get('content', '') | b64decode | trim)
+  when: cms_git_checkout_result.after is defined
   notify: Restart CMS
 
-- name: Install CMS using setup.py
-  become: yes
-  pip:
-    chdir: /opt/cms
-    name: .
-    virtualenv: /opt/.venv
-    virtualenv_command: python3.12 -m venv
-    extra_args: "--no-cache-dir --no-build-isolation"
-  when: cms_git_checkout_result.get('after', '<cms_git_checkout_skipped>') != (slurp_cms_installed_git_commit_result.get('content', '') | b64decode | trim)
-  notify: Restart CMS
-
-- name: Write latest Git commit hash to cms_installed_git_commit file
+- name: Write latest Git commit hash to cms_installed_git_commit
   become: yes
   template:
     src: cms_installed_git_commit.j2
-    dest: /opt/cms_installed_git_commit
+    dest: /home/cmsuser/cms_installed_git_commit
     owner: cmsuser
     mode: '0664'
+  when: cms_git_checkout_result.after is defined
 
-- name: Copy Polygon testlib
+- name: Copy Polygon testlib.h
   become: yes
   copy:
-    src: /opt/cms/cmscontrib/loaders/polygon/testlib.h
+    src: /home/cmsuser/src/cmscontrib/loaders/polygon/testlib.h
     dest: /usr/local/include/cms/testlib.h
     remote_src: yes
     follow: yes
     owner: root
     group: root
 
-- name: Copy CMS configuration file
+- name: Copy CMS configuration files
   include_tasks: copy_config.yml
   tags: always
 
-- name: Migrate CMS DB
+- name: Migrate CMS DB if needed
   include_tasks: migrate_db.yml
   when: run_db_migration | bool
   tags: always
@@ -226,3 +232,4 @@
 - name: Flush CMS restart handlers
   meta: flush_handlers
   tags: always
+

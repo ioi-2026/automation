@@ -21,8 +21,8 @@
   postgresql_db:
     name: "{{ item.name }}"
     encoding: "UTF-8"
-    lc_collate: "{{ db_locale | default ('en_US.UTF-8') }}"
-    lc_ctype: "{{ db_locale | default ('en_US.UTF-8') }}"
+    lc_collate: "{{ db_locale | default ('en_US.utf8') }}"
+    lc_ctype: "{{ db_locale | default ('en_US.utf8') }}"
     template: template0
   loop: "{{ dbs }}"
   notify: Restart PostgreSQL

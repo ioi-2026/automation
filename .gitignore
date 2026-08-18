@@ -1,1 +1,9 @@
 *.pdf
+
+# Editor / IDE
+.idea/
+
+# Local archives and ansible run logs
+automation.zip
+output.txt
+error.txt
